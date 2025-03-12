@@ -1,0 +1,24 @@
+node {
+    try{
+        stage('clean workspace'){
+            cleanWs()
+        }
+        stage('clone repository')
+        {
+            git branch: 'main', url: 'https://github.com/OT-MICROSERVICES/salary-api.git'
+        }
+        stage('Compile Test')
+        {
+            sh 'mvn clean compile'
+        }
+        emailext body: 'BUILD SUCCESS',
+        subject: 'Job Name: ${env.JOB_NAME}, Build Number: ${env.BUILD_NUMBER}',
+        to: 'sheetal.nain@mygurukulam.co'
+    }
+    catch(Exception error){
+        emailext body: 'BUILD S',
+        subject: 'Job Name: ${env.JOB_NAME}, Build Number: ${env.BUILD_NUMBER}',
+        to: 'sheetal.nain@mygurukulam.co'
+        throw error
+    }
+}
