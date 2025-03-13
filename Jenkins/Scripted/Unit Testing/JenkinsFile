@@ -1,0 +1,51 @@
+node {
+    try {
+        stage('Clean Workspace') {
+            cleanWs()
+        }
+
+        stage('Clone Repository') {
+            git branch: 'main', url: 'https://github.com/OT-MICROSERVICES/employee-api.git'
+        }
+
+        stage('Verify Go Installation') {
+            script {
+                echo "Checking Go version"
+                sh "go version"
+            }
+        }
+
+       
+        stage('Run Unit Tests') {
+            script {
+                echo "Running Go unit tests"
+                sh "go test -v -cover ./..."
+            }
+        }
+
+        stage('Generating the report') {
+            script {
+                echo "Generating Report"
+                sh "go test -coverprofile=coverage.out"
+                   "go tool cover -html=coverage.out -o coverage.html"
+                   
+            }
+            
+        echo "Pipeline completed"
+    } 
+    
+    
+       echo "Pipeline completed"
+        emailext body: 'BUILD SUCCESS',
+                 subject: "Job Name: ${env.JOB_NAME}, Build Number: ${env.BUILD_NUMBER}",
+                 to: 'sheetal.nain@mygurukulam.co'
+    } catch (Exception e) {
+        echo "Pipeline failed: ${e.getMessage()}"
+        currentBuild.result = 'FAILURE'
+        emailext body: 'BUILD FAILED',
+                 subject: "Job Name: ${env.JOB_NAME}, Build Number: ${env.BUILD_NUMBER}",
+                 to: 'sheetal.nain@mygurukulam.co'
+        throw e
+    }
+}
+
