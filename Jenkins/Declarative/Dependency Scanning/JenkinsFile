@@ -1,0 +1,36 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Clean Workspace') {
+            steps {
+                deleteDir()
+            }
+        }
+
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/YOUR-REPO.git'
+            }
+        }
+
+        stage('Run Safety Scan') {
+            steps {
+                sh 'safety check --full-report || exit 1'
+            }
+        }
+    }
+
+    post {
+        success {
+            emailext body: 'Dependency scan passed successfully!',
+                     subject: "Jenkins Build Success: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                     to: 'sheetal.nain@mygurukulam.co'
+        }
+        failure {
+            emailext body: 'Dependency scan failed! Vulnerabilities found.',
+                     subject: "Jenkins Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                     to: 'sheetal.nain@mygurukulam.co'
+        }
+    }
+}
