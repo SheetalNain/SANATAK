@@ -1,0 +1,66 @@
+node {
+    def repoUrl = "https://github.com/SheetalNain/AMI.git"
+    def branch = "main"
+    def packerTemplate = "ubuntu-ami.pkr.hcl"
+    def amiId = ""
+
+    try {
+        stage('Checkout Code from GitHub') {
+            git branch: branch, url: repoUrl
+        }
+
+        stage('Configure AWS Credentials') {
+            withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWS_ACCESS_KEY_ID']]) {
+                script {
+                    env.AWS_ACCESS_KEY_ID = env.AWS_ACCESS_KEY_ID
+                    env.AWS_SECRET_ACCESS_KEY = env.AWS_SECRET_ACCESS_KEY
+                }
+            }
+        }
+
+        stage('Initialize Packer') {
+            sh "packer init ${packerTemplate}"
+        }
+
+        stage('Validate Packer Template') {
+            sh "packer validate ${packerTemplate}"
+        }
+
+        stage('Build AMI using Packer') {
+            sh "packer build ${packerTemplate} | tee output.log"
+        }
+
+        stage('Extract AMI ID') {
+            script {
+                amiId = sh(script: "grep -o 'ami-[a-zA-Z0-9]*' output.log | tail -1", returnStdout: true).trim()
+                if (amiId) {
+                    echo "AMI Created: ${amiId}"
+                } else {
+                    error "AMI ID not found!"
+                }
+            }
+        }
+
+        stage('Save AMI ID') {
+            writeFile file: "ami-id.txt", text: amiId
+            archiveArtifacts artifacts: 'ami-id.txt', fingerprint: true
+        }
+
+        stage('Cleanup') {
+            sh "rm -f output.log ami-id.txt"
+        }
+
+        stage('Send Success Email') {
+            emailext body: "BUILD SUCCESS\nJob Name: ${env.JOB_NAME}\nBuild Number: ${env.BUILD_NUMBER}",
+                     subject: "Jenkins Build Success: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                     to: 'sheetal.nain@mygurukulam.co'
+        }
+    } catch (Exception error) {
+        stage('Send Failure Email') {
+            emailext body: "BUILD FAILED\nJob Name: ${env.JOB_NAME}\nBuild Number: ${env.BUILD_NUMBER}",
+                     subject: "Jenkins Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                     to: 'sheetal.nain@mygurukulam.co'
+        }
+        throw error
+    }
+}
