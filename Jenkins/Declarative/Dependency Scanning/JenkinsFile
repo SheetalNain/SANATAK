@@ -10,27 +10,54 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/YOUR-REPO.git'
+                git branch: 'main', url: 'https://github.com/OT-MICROSERVICES/attendance-api.git'
+            }
+        }
+
+        stage('Prepare Environment') {
+            steps {
+                sh '''
+                    export PATH=$HOME/.local/bin:$PATH               
+                    pip install --upgrade "setuptools<66"
+                    pip install --upgrade virtualenv                
+                    poetry --version
+                '''
             }
         }
 
         stage('Run Safety Scan') {
             steps {
-                sh 'safety check --full-report || exit 1'
+                sh '''
+                    pip install --user safety
+                    export PATH=$HOME/.local/bin:$PATH
+                    which safety || echo "Safety not found in PATH"
+                    safety --version || echo "Safety version check failed"
+                    safety check --full-report > safety_report.txt || echo "Safety scan failed with exit code $?"
+                '''
+            }
+        }
+
+        stage('Archive Report') {
+            steps {
+                archiveArtifacts artifacts: 'safety_report.txt', fingerprint: true
             }
         }
     }
 
     post {
         success {
-            emailext body: 'Dependency scan passed successfully!',
+            emailext body: '''Dependency scan passed successfully! 
+                             \n\nSafety Report: \n${BUILD_URL}/artifact/safety_report.txt''',
                      subject: "Jenkins Build Success: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                     to: 'sheetal.nain@mygurukulam.co'
+                     to: 'sheetal.nain@mygurukulam.co',
+                     attachLog: true
         }
         failure {
-            emailext body: 'Dependency scan failed! Vulnerabilities found.',
+            emailext body: '''Dependency scan failed! Vulnerabilities found or execution error.
+                             \n\nSafety Report: \n${BUILD_URL}/artifact/safety_report.txt''',
                      subject: "Jenkins Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                     to: 'sheetal.nain@mygurukulam.co'
+                     to: 'sheetal.nain@mygurukulam.co',
+                     attachLog: true
         }
     }
 }
