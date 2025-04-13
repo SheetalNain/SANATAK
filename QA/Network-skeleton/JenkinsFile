@@ -1,0 +1,26 @@
+@Library('wrapperCode@Sheetal-SCRUM-373') _
+
+def wrappercode = new org.Templates.wrapperCodeTemplate()
+
+node {
+    def repoUrl = 'https://github.com/snaatak-Zero-Downtime-Crew/Wrapper-Code.git'
+    def branchName = 'Sheetal-SCRUM-373'
+    def credentialsId = 'git-cred'
+    def terraformPath = "Env/QA/Network-Skeleton"
+    def terraformHome = tool 'terraform'
+    def INFRACOST_API_KEY = 'NFRACOST_API_KEY'
+    env.PATH = "${terraformHome}/bin:${env.PATH}"
+
+    properties([
+        parameters([
+            choice(name: 'action', choices: ['apply', 'destroy'], description: 'Choose any one option'),
+            string(name: 'tfvarsFile', defaultValue: '', description: 'Terraform .tfvars file (optional)')
+        ])
+    ])
+    stage('Clean Workspace'){
+        cleanWs()
+    }
+    def message = (params.action == 'apply') ? 'Approval for infrastructure apply' : 'Approval for infrastructure destroy'
+
+    wrappercode.call(repoUrl, branchName, credentialsId, terraformPath, message, params.action, params.tfvarsFile, INFRACOST_API_KEY)
+}
