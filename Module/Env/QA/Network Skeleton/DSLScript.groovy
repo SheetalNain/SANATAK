@@ -1,39 +1,36 @@
-folder('Module') {
-    displayName('Module')
+folder('Env') {
+    description("This folder contains all environment-related jobs")
+    displayName("Env")
 }
 
-folder('Module/Env') {
-    displayName('Env')
+folder('Env/QA') {
+    description("This folder contains jobs for the Development environment")
+    displayName("QA")
 }
 
-folder('Module/Env/QA') {
-    displayName('QA')
+folder('Env/QA/Network Skeleton') {
+    description("Infrastructure-related jobs for the Development environment")
+    displayName("Network Skeleton")
 }
 
-folder('Module/Env/QA/Wrapper-Code') {
-    displayName('Wrapper-Code')
+folder('Env/QA/Network Skeleton') {
+    description("Terraform application jobs under Infrastructure for Development")
+    displayName("Network Skeleton")
 }
 
-folder('Module/Env/QA/Wrapper-Code/Network-Skeleton') {
-    displayName('Network-Skeleton')
-}
-
-pipelineJob('Module/Env/QA/Wrapper-Code/Network-Skeleton') {
-    displayName('Network Skeleton')
-    description('Job to wrapper code for Network Skeleton from GitHub repository')
-
+pipelineJob('Env/QA/Network Skeleton') {
+    description("CI pipeline for Network Skeleton")
     definition {
         cpsScm {
             scm {
                 git {
                     remote {
-                        url('https://github.com/snaatak-Zero-Downtime-Crew/Wrapper-Code.git')
+                        url('https://github.com/snaatak-Zero-Downtime-Crew/jenkins.git')
                         credentials('git-cred')
                     }
-                    branch('*/Sheetal-SCRUM-373')
+                    branches('*/Sheetal-SCRUM-373')
                 }
             }
-            scriptPath('Env/QA/Network-Skeleton/Jenkinsfile')
-        }
+            scriptPath('Wrapper Code/Env/QA/Network Skeleton/Jenkinsfile')         }
     }
 }
