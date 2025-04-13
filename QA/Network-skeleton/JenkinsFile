@@ -8,7 +8,7 @@ node {
     def credentialsId = 'git-cred'
     def terraformPath = "Env/QA/Network-Skeleton"
     def terraformHome = tool 'terraform'
-    def INFRACOST_API_KEY = 'NFRACOST_API_KEY'
+    def INFRACOST_API_KEY = 'INFRACOST_API_KEY'
     env.PATH = "${terraformHome}/bin:${env.PATH}"
 
     properties([
